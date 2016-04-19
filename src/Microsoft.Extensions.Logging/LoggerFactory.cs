@@ -17,6 +17,11 @@ namespace Microsoft.Extensions.Logging
         private readonly object _sync = new object();
         private bool _disposed = false;
 
+        public LoggerFactory()
+        {
+            LoggingEventSource.Logger.LoggerFactoryCreated(this);
+        }
+
         public ILogger CreateLogger(string categoryName)
         {
             Logger logger;
