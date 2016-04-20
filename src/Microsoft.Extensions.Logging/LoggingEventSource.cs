@@ -58,7 +58,7 @@ namespace Microsoft.Extensions.Logging
     ///         if (eventSource.Name == "Microsoft-Extensions-Logging") {
     ///             // initialize a string, string dictionary of arguments to pass to the EventSource.  
     ///             // Turn on loggers matching App* to Information, everything else (*) is the default level (which is EventLevel.Error)
-    ///             var args = new Dictionary<string, string>() { { "FilterSpecs", "App*:Information;*" } };
+    ///             var args = new Dictionary&lt;string, string&gt;() { { "FilterSpecs", "App*:Information;*" } };
     ///             // Set the default level (verbosity) to Error, and only ask for the formatted messages in this case.  
     ///             EnableEvents(eventSource, EventLevel.Error, LoggingEventSource.Keywords.FormattedMessage, args);
     ///         }
