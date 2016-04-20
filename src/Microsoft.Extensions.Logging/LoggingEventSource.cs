@@ -1,6 +1,6 @@
 ﻿
 // This is define for old (pre V4.6) systems.   .NET Core never needs to define this.  
-// #define NO_EVENTSOURCE_COMPLEX_TYPE_SUPPORT
+#define NO_EVENTSOURCE_COMPLEX_TYPE_SUPPORT
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.Tracing;
@@ -586,10 +586,8 @@ namespace Microsoft.Extensions.Logging
                     {
                         if (_isJsonStop)
                             _logger.Provider._eventSource.ActivityJsonStop(_id, _logger.Provider.FactoryID, _logger.Name);
-#if !NO_EVENTSOURCE_COMPLEX_TYPE_SUPPORT
                         else 
                             _logger.Provider._eventSource.ActivityStop(_id, _logger.Provider.FactoryID, _logger.Name);
-#endif
                     }   
 
                     EventSourceLogger _logger;
@@ -668,6 +666,7 @@ namespace Microsoft.Extensions.Logging
         /// Set the filtering specifcation.  null means turn off all loggers.   Empty string is turn on all providers.  
         /// </summary>
         /// <param name="filterSpec"></param>
+        [NonEvent]
         private void SetFilterSpec(string filterSpec)
         {
             _filterSpec = filterSpec;
