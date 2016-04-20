@@ -73,7 +73,7 @@ namespace Microsoft.Extensions.Logging
     /// }
     /// </summary>
     [EventSource(Name = "Microsoft-Extensions-Logging")]
-    internal class LoggingEventSource : EventSource
+    public class LoggingEventSource : EventSource
     {
         /// <summary>
         /// This is public from an EventSource consumer point of view, but since these defintions 
@@ -102,7 +102,7 @@ namespace Microsoft.Extensions.Logging
         /// <summary>
         ///  The one and only instance of the LoggingEventSource.  
         /// </summary>
-        public static readonly LoggingEventSource Logger = new LoggingEventSource();
+        internal static readonly LoggingEventSource Logger = new LoggingEventSource();
 
         /// <summary>
         /// This is the one public method in this class.   It should be called when the LoggerFactory is created.   
@@ -110,7 +110,7 @@ namespace Microsoft.Extensions.Logging
         /// consumers of the LoggingEventSource.  
         /// </summary>
         [NonEvent]
-        public void LoggerFactoryCreated(LoggerFactory factory)
+        internal void LoggerFactoryCreated(LoggerFactory factory)
         {
             lock (this)
             {
