@@ -1,6 +1,6 @@
 ﻿
 // This is define for old (pre V4.6) systems.   .NET Core never needs to define this.  
-#define NO_EVENTSOURCE_COMPLEX_TYPE_SUPPORT
+// #define NO_EVENTSOURCE_COMPLEX_TYPE_SUPPORT
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.Tracing;
