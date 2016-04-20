@@ -1,5 +1,6 @@
 ﻿
-// #define NO_EVENTSOURCE_COMPLEX_TYPE_SUPPORT
+// This is define for old (pre V4.6) systems.   .NET Core never needs to define this.  
+#define NO_EVENTSOURCE_COMPLEX_TYPE_SUPPORT
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.Tracing;
@@ -150,19 +151,25 @@ namespace Microsoft.Extensions.Logging
         /// <summary>
         /// ActivityStart is called when ILogger.BeginScope() is called   
         /// </summary>
-        [Event(3, Keywords = Keywords.Message | Keywords.FormattedMessage, Level = EventLevel.LogAlways, ActivityOptions = EventActivityOptions.Recursive)]
 #if !NO_EVENTSOURCE_COMPLEX_TYPE_SUPPORT
+        [Event(3, Keywords = Keywords.Message | Keywords.FormattedMessage, Level = EventLevel.LogAlways, ActivityOptions = EventActivityOptions.Recursive)]
         private void ActivityStart(int ID, int FactoryID, string LoggerName, IEnumerable<KeyValuePair<string, string>> Arguments)
         {
             WriteEvent(3, ID, FactoryID, LoggerName, Arguments);
         }
+#else 
+        [Event(3, Keywords = Keywords.Message | Keywords.FormattedMessage, Level = EventLevel.LogAlways)]
+        private void ActivityStart(int ID, int FactoryID, string LoggerName)
+        {
+            WriteEvent(3, ID, FactoryID, LoggerName);
+        }
+#endif
 
         [Event(4, Keywords = Keywords.Message | Keywords.FormattedMessage, Level = EventLevel.LogAlways)]
         private void ActivityStop(int ID, int FactoryID, string LoggerName)
         {
             WriteEvent(4, ID, FactoryID, LoggerName);
         }
-#endif
 
         [Event(5, Keywords = Keywords.JsonMessage, Level = EventLevel.LogAlways)]
         private void MessageJson(LogLevel Level, int FactoryID, string LoggerName, string EventId, string ExceptionJson, string ArgumentsJson)
@@ -170,7 +177,11 @@ namespace Microsoft.Extensions.Logging
             WriteEvent(5, Level, FactoryID, LoggerName, EventId, ExceptionJson, ArgumentsJson);
         }
 
+#if !NO_EVENTSOURCE_COMPLEX_TYPE_SUPPORT
+        [Event(6, Keywords = Keywords.JsonMessage | Keywords.FormattedMessage, Level = EventLevel.LogAlways, ActivityOptions = EventActivityOptions.Recursive)]
+#else
         [Event(6, Keywords = Keywords.JsonMessage | Keywords.FormattedMessage, Level = EventLevel.LogAlways)]
+#endif 
         private void ActivityJsonStart(int ID, int FactoryID, string LoggerName, string ArgumentsJson)
         {
             WriteEvent(6, ID, FactoryID, LoggerName, ArgumentsJson);
@@ -185,7 +196,9 @@ namespace Microsoft.Extensions.Logging
         /// <summary>
         /// ExceptionInfo is the serialized form of an exception.   
         /// </summary>
+#if !NO_EVENTSOURCE_COMPLEX_TYPE_SUPPORT
         [EventData]
+#endif
         private class ExceptionInfo
         {
             public string TypeName;
@@ -194,7 +207,7 @@ namespace Microsoft.Extensions.Logging
             public string VerboseMessage;       // This is the ToString() of the Exception
         }
 
-        #region private 
+#region private 
         /// <summary>
         /// Converts a keyvalue bag to JSON.  
         /// </summary>
@@ -334,7 +347,7 @@ namespace Microsoft.Extensions.Logging
                 SetFilterSpec(null);        // Turn off any logging.  
             }
 
-            #region private 
+#region private 
 
             /// <summary>
             /// Given a set of specifications  Pat1:Level1;Pat1;Level2 ... Where
@@ -534,24 +547,27 @@ namespace Microsoft.Extensions.Logging
                 {
                     var id = Interlocked.Increment(ref s_activityIds);
 
-                    if (Provider._eventSource.IsEnabled(System.Diagnostics.Tracing.EventLevel.Critical, LoggingEventSource.Keywords.Message) ||
-                        !Provider._eventSource.IsEnabled(System.Diagnostics.Tracing.EventLevel.Critical, LoggingEventSource.Keywords.JsonMessage))
-                    {
-#if !NO_EVENTSOURCE_COMPLEX_TYPE_SUPPORT
-                        IEnumerable<KeyValuePair<string, string>> arguments = GetProperties(state);
-                        Provider._eventSource.ActivityStart(id, Provider.FactoryID, Name, arguments);
-                        return new ActivityScope(this, id, false);
-#endif
-                    }
-                    else
+                    // If JSonMessage or FormattMessage is on and Message is off, then use the JSON format.  
+                    if (Provider._eventSource.IsEnabled(System.Diagnostics.Tracing.EventLevel.Critical, LoggingEventSource.Keywords.JsonMessage|LoggingEventSource.Keywords.FormattedMessage) &&
+                        !Provider._eventSource.IsEnabled(System.Diagnostics.Tracing.EventLevel.Critical, LoggingEventSource.Keywords.Message))
                     {
                         IEnumerable<KeyValuePair<string, string>> arguments = GetProperties(state);
                         Provider._eventSource.ActivityJsonStart(id, Provider.FactoryID, Name, ToJson(arguments));
                         return new ActivityScope(this, id, true);
                     }
+                    else 
+                    {
+#if !NO_EVENTSOURCE_COMPLEX_TYPE_SUPPORT
+                        IEnumerable<KeyValuePair<string, string>> arguments = GetProperties(state);
+                        Provider._eventSource.ActivityStart(id, Provider.FactoryID, Name, arguments);
+#else 
+                        Provider._eventSource.ActivityStart(id, Provider.FactoryID, Name);
+#endif
+                        return new ActivityScope(this, id, false);
+                    }
                 }
 
-                #region private 
+#region private 
 
                 /// <summary>
                 /// ActivityScope is just a IDisposable that knows how to send the ActivityStop event when it is 
@@ -570,8 +586,10 @@ namespace Microsoft.Extensions.Logging
                     {
                         if (_isJsonStop)
                             _logger.Provider._eventSource.ActivityJsonStop(_id, _logger.Provider.FactoryID, _logger.Name);
+#if !NO_EVENTSOURCE_COMPLEX_TYPE_SUPPORT
                         else 
                             _logger.Provider._eventSource.ActivityStop(_id, _logger.Provider.FactoryID, _logger.Name);
+#endif
                     }   
 
                     EventSourceLogger _logger;
@@ -613,14 +631,14 @@ namespace Microsoft.Extensions.Logging
                 }
 
                 private static int s_activityIds;
-                #endregion
+#endregion
             }
 
             LogLevel _defaultLevel;             // The default level for all loggers 
             string _filterSpec;                 // My filter specification. 
             EventSourceLogger _loggers;         // linked list of loggers I have created. 
             LoggingEventSource _eventSource;    // The eventSource I log to.  
-            #endregion
+#endregion
         }
 
 #if !NO_EVENTSOURCE_COMPLEX_TYPE_SUPPORT
@@ -659,6 +677,6 @@ namespace Microsoft.Extensions.Logging
 
         string _filterSpec;
         EventSourceLoggerProvider _loggingProviders;
-        #endregion
+#endregion
     }
 }
